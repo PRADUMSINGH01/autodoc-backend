@@ -24,7 +24,7 @@ import webhookRoutes from '../routes/webhook.routes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/github', githubRoutes);
-app.use('/api/webhooks', webhookRoutes);
+app.use('/api/webhook', webhookRoutes);
 
 // Example route with Zod validation
 const RepoSchema = z.object({
