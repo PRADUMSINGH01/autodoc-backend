@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "Node16",
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node16",
+  },
+  "include": [
+    "src/**/*",
+    "firebase/**/*",
+    "schema/**/*",
+    "routes/**/*",
+    "utils/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
