@@ -16,25 +16,20 @@ import { ConnectionOptions } from 'bullmq';
 
 
 function getRedisConfig() {
-    try {
-        if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
-            console.error("Please provide REDIS_HOST, REDIS_PORT, REDIS_PASSWORD,  environment variables");
-            process.exit(1);
-        }
-
-        const RedisConnection: ConnectionOptions = {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: Number(process.env.REDIS_PORT) || 6379,
-            password: process.env.REDIS_PASSWORD,
-            tls: {}, // Mandatory for Upstash SSL connections
-            maxRetriesPerRequest: null,
-        }
-
-
-        return RedisConnection
-    } catch (error) {
-        console.error("Error in getting Redis connection config", error);
-        process.exit(1);
+    if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
+        throw new Error(
+            'Redis environment variables (REDIS_HOST, REDIS_PORT, REDIS_PASSWORD) are not set. Worker will be disabled.'
+        );
     }
+
+    const RedisConnection: ConnectionOptions = {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASSWORD,
+        tls: {}, // Mandatory for Upstash SSL connections
+        maxRetriesPerRequest: null,
+    };
+
+    return RedisConnection;
 }
 export default getRedisConfig;

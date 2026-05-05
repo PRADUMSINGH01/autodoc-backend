@@ -1,8 +1,15 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { z } from 'zod';
+import authRoutes from '../routes/auth.routes';
+import githubRoutes from '../routes/github.routes';
+import webhookRoutes from '../routes/webhook.routes';
+import waitlistRoutes from '../routes/waitlist.routes';
+import RateLimiter from '../utils/rate-limit';
+
 const app = express();
-const PORT = process.env.PORT || 5000;
+// Cloud Run provides PORT env var (usually 8080). Fall back to 5000 locally.
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 app.use(cors());
 // Capture raw body for webhook signature verification
@@ -16,12 +23,6 @@ app.use(express.json({
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
-import authRoutes from '../routes/auth.routes';
-import githubRoutes from '../routes/github.routes';
-import webhookRoutes from '../routes/webhook.routes';
-import waitlistRoutes from '../routes/waitlist.routes';
-import RateLimiter from '../utils/rate-limit';
 
 app.use('/api/auth', RateLimiter.authLimiter, authRoutes);
 app.use('/api/github', RateLimiter.standardLimiter, githubRoutes);
@@ -48,9 +49,17 @@ app.post('/api/repos', RateLimiter.authLimiter, (req: Request, res: Response) =>
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// Must listen on 0.0.0.0 for Google Cloud Run (not just localhost)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on 0.0.0.0:${PORT}`);
 });
 
-// Initialize background workers
-import '../workers/main.worker';
+// Initialize background workers AFTER server starts
+// Wrapped in try/catch so a Redis misconfiguration never crashes the HTTP server
+try {
+  require('../workers/main.worker');
+  console.log('[Workers] Background workers initialized.');
+} catch (err) {
+  console.error('[Workers] Failed to initialize workers (Redis may be unavailable):', err);
+  console.error('[Workers] HTTP server will continue running without background workers.');
+}
