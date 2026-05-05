@@ -33,11 +33,11 @@ async function testScanner() {
         console.log("--- End of XML Output ---\n");
 
         // 4. Send the COMPLETE repository context to Gemini for Professional Documentation
-        const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyCxvIEWPWEcbxIVIh_tbQiYnp5_De1AKHw";
-        
+        const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+
         console.log(`\n[Gemini] Sending COMPLETE repository context (${xmlResult.length} characters) to Gemini 2.5 Flash...`);
         console.log(`[Gemini] Requesting professional-grade documentation suite...`);
-        
+
         let response;
         try {
             response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`, {
