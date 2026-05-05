@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../firebase/firebase';
+import addJob from '../jobs/repo-analysis';
 
 const router = Router();
 
@@ -62,6 +63,37 @@ async function getWebhooks() {
       }
 
       console.log(`[Queue] Adding job to clone ${payload.repository.full_name} and generate docs...`);
+      
+      try {
+        const { createAppAuth } = await import('@octokit/auth-app');
+        const auth = createAppAuth({
+          appId: process.env.GITHUB_APP_ID || '',
+          privateKey: process.env.GITHUB_APP_PRIVATE_KEY || '',
+        });
+
+        const installationAuthentication = await auth({
+          type: "installation",
+          installationId: installationId,
+        });
+
+        const jobId = `repo-${payload.repository.id}-commit-${payload.after}`;
+
+        await addJob({
+            repoId: payload.repository.id.toString(),
+            ownerId: `github:${payload.sender.id}`,
+            projectId: payload.repository.id.toString(), // Assuming repoId as projectId for now
+            githubToken: installationAuthentication.token,
+            githubOwner: payload.repository.owner.login,
+            githubRepo: payload.repository.name,
+            gitProvider: 'github',
+            commitSha: payload.after,
+            jobId: jobId
+        });
+        
+        console.log(`✅ Job added successfully: ${jobId}`);
+      } catch (error) {
+        console.error("Failed to add job from webhook:", error);
+      }
     });
   }
   return webhooksInstance;

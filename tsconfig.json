@@ -15,7 +15,10 @@
     "firebase/**/*",
     "schema/**/*",
     "routes/**/*",
-    "utils/**/*"
+    "utils/**/*",
+    "queue/**/*",
+    "jobs/**/*",
+    "workers/**/*"
   ],
   "exclude": [
     "node_modules"
