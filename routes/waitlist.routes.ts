@@ -4,28 +4,48 @@ import { z } from 'zod';
 
 const router = Router();
 
+// Strict email schema with lowercase normalization
 const WaitlistSchema = z.object({
-  email: z.string().email(),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email({ message: 'Please provide a valid email address.' }),
 });
 
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { email } = WaitlistSchema.parse(req.body);
 
-    // Save to Firestore in a 'waitlist' collection
+    // Duplicate check — don't save the same email twice
+    const existing = await db
+      .collection('waitlist')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+
+    if (!existing.empty) {
+      return res.status(409).json({
+        error: "You're already on the waitlist! We'll be in touch soon.",
+      });
+    }
+
+    // Save to Firestore
     await db.collection('waitlist').add({
       email,
       timestamp: new Date().toISOString(),
+      source: 'website',
     });
 
-    res.status(201).json({ message: 'Thank you for joining our waitlist!' });
+    return res.status(201).json({
+      message: "You're on the list! We'll notify you when we launch. 🎉",
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: 'Invalid email address' });
-    } else {
-      console.error('Waitlist error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(400).json({ error: error.errors[0].message });
     }
+    console.error('[Waitlist] Error saving email:', error);
+    return res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
 
